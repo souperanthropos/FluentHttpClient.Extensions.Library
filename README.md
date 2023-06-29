@@ -9,3 +9,5 @@ Once the `JwtBearerRefreshTokenProcessing` method has successfully obtained a ne
 
 
 Add this middleware, the application can enforce token expiration checks before processing each request, ensuring that only authenticated and authorized users can access protected resources.
+
+An example of using `JwtBearerAuthManagerMiddleware` can be found in `Sample.Client.App`
