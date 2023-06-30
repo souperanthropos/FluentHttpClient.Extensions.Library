@@ -21,20 +21,14 @@ namespace Sample.Client.App
 
                 fluentHttpClientFactory.CreateBuilder(identifier: "gettoken")
                     .WithMessageHandler(new HttpClientHandler { ServerCertificateCustomValidationCallback = delegate { return true; } })
-                    .WithBaseUrl("https://localhost:7161/api/token")
-                    .WithHeader("user-agent", "Sample.Client.App")
-                    .Register();
-                fluentHttpClientFactory.CreateBuilder(identifier: "refreshtoken")
-                    .WithMessageHandler(new HttpClientHandler { ServerCertificateCustomValidationCallback = delegate { return true; } })
-                    .WithBaseUrl("https://localhost:7161/api/refresh-token")
+                    .WithBaseUrl("https://localhost:7161")
                     .WithHeader("user-agent", "Sample.Client.App")
                     .Register();
 
                 var getTokenHttpClient = fluentHttpClientFactory.Get("gettoken");
-                var refreshTokenHttpClient = fluentHttpClientFactory.Get("refreshtoken");
 
                 var tokenResponse =
-                    await getTokenHttpClient.CreateRequest()
+                    await getTokenHttpClient.CreateRequest("/api/token")
                         .AsPost()
                         .WithBody(new
                         {
@@ -52,7 +46,7 @@ namespace Sample.Client.App
                       JwtBearerRefreshTokenProcessing = async () =>
                       {
                           var refreshTokenResponse =
-                          await refreshTokenHttpClient.CreateRequest()
+                          await getTokenHttpClient.CreateRequest("/api/refresh-token")
                               .AsPost()
                               .WithBody(new
                               {
