@@ -45,6 +45,8 @@ namespace FluentHttpClient.Extensions.Library.Middleware
             var request = context.Request;
 
             FluentHttpResponse response;
+            bool isMutexReleased = false;
+
             try
             {
                 await _mutex.WaitAsync();
@@ -56,13 +58,14 @@ namespace FluentHttpClient.Extensions.Library.Middleware
                 }
 
                 _mutex.Release();
+                isMutexReleased = true;
 
                 request.Headers.Add(HeaderTypes.Authorization, $"{AuthSchemeTypes.Bearer} {_options.JwtBearerAuthData.Token}");
                 response = await _next(context);
             }
             catch (Exception e)
             {
-                _mutex.Release();
+                if(!isMutexReleased) _mutex.Release();
                 throw e;
             }
 
