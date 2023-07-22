@@ -51,7 +51,8 @@ namespace FluentHttpClient.Extensions.Library.Middleware
             {
                 await _mutex.WaitAsync();
 
-                if (string.IsNullOrEmpty(_options.JwtBearerAuthData.Token) ||
+                if (_options.JwtBearerAuthData == null || 
+                    string.IsNullOrEmpty(_options.JwtBearerAuthData.Token) ||
                     _options.JwtBearerAuthData.TokenExpiresAt <= DateTime.UtcNow)
                 {
                     _options.JwtBearerAuthData = await _options.JwtBearerRefreshTokenProcessing();
