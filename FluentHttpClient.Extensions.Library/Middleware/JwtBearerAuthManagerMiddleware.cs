@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using System.Threading;
+﻿using FluentlyHttpClient;
 using FluentlyHttpClient.Middleware;
-using FluentlyHttpClient;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace FluentHttpClient.Extensions.Library.Middleware
 {
@@ -12,12 +10,14 @@ namespace FluentHttpClient.Extensions.Library.Middleware
     {
         string Token { get; }
         DateTime TokenExpiresAt { get; }
+        string RefreshToken { get; }
     }
 
     public class JwtBearerAuthManagerMiddlewareOptions
     {
-        public IJwtBearerAuthData JwtBearerAuthData { get; set; }
-        public Func<Task<IJwtBearerAuthData>> JwtBearerRefreshTokenProcessing { get; set; }
+        public IJwtBearerAuthData JwtBearerAuthData { get; }
+
+        public Func<IJwtBearerAuthData, Task<IJwtBearerAuthData>> JwtBearerRefreshTokenProcessing { get; set; }
 
         public JwtBearerAuthManagerMiddlewareOptions(IJwtBearerAuthData jwtBearerAuthData)
         {
@@ -31,6 +31,8 @@ namespace FluentHttpClient.Extensions.Library.Middleware
         private readonly FluentHttpMiddlewareDelegate _next;
         private readonly JwtBearerAuthManagerMiddlewareOptions _options;
 
+        private IJwtBearerAuthData JwtBearerAuthData { get; set; }
+
         public JwtBearerAuthManagerMiddleware(
             FluentHttpMiddlewareDelegate next,
             FluentHttpMiddlewareClientContext context,
@@ -38,6 +40,7 @@ namespace FluentHttpClient.Extensions.Library.Middleware
         {
             _next = next;
             _options = options;
+            JwtBearerAuthData = options.JwtBearerAuthData;
         }
 
         public async Task<FluentHttpResponse> Invoke(FluentHttpMiddlewareContext context)
@@ -51,16 +54,16 @@ namespace FluentHttpClient.Extensions.Library.Middleware
             {
                 await _mutex.WaitAsync();
 
-                if (string.IsNullOrEmpty(_options.JwtBearerAuthData?.Token) ||
-                    _options.JwtBearerAuthData?.TokenExpiresAt <= DateTime.UtcNow)
+                if (string.IsNullOrEmpty(JwtBearerAuthData?.Token) ||
+                    JwtBearerAuthData?.TokenExpiresAt <= DateTime.UtcNow)
                 {
-                    _options.JwtBearerAuthData = await _options.JwtBearerRefreshTokenProcessing();
+                    JwtBearerAuthData = await _options.JwtBearerRefreshTokenProcessing(JwtBearerAuthData);
                 }
 
                 _mutex.Release();
                 isMutexReleased = true;
 
-                request.Headers.Add(HeaderTypes.Authorization, $"{AuthSchemeTypes.Bearer} {_options.JwtBearerAuthData.Token}");
+                request.Headers.Add(HeaderTypes.Authorization, $"{AuthSchemeTypes.Bearer} {JwtBearerAuthData.Token}");
                 response = await _next(context);
             }
             catch (Exception e)
