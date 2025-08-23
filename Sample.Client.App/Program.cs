@@ -1,7 +1,6 @@
 ﻿using FluentHttpClient.Extensions.Library.Middleware;
 using FluentlyHttpClient;
 using Microsoft.Extensions.DependencyInjection;
-using System.Diagnostics;
 
 namespace Sample.Client.App
 {
@@ -43,15 +42,15 @@ namespace Sample.Client.App
                   .WithHeader("user-agent", "Sample.Client.App")
                   .UseMiddleware<JwtBearerAuthManagerMiddleware>(new JwtBearerAuthManagerMiddlewareOptions(tokenResponse.Data)
                   {
-                      JwtBearerRefreshTokenProcessing = async () =>
+                      JwtBearerRefreshTokenProcessing = async (data) =>
                       {
                           var refreshTokenResponse =
                           await getTokenHttpClient.CreateRequest("/api/refresh-token")
                               .AsPost()
                               .WithBody(new
                               {
-                                  AccessToken = tokenResponse.Data.Token,
-                                  tokenResponse.Data.RefreshToken
+                                  AccessToken = data.Token,
+                                  RefreshToken = data.RefreshToken
                               })
                               .ReturnAsResponse<JwtBearerAuthData>();
                           return refreshTokenResponse.Data;
