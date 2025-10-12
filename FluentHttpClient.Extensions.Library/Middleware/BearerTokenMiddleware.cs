@@ -1,27 +1,68 @@
 ﻿using FluentlyHttpClient;
 using FluentlyHttpClient.Middleware;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace FluentHttpClient.Extensions.Library.Middleware
 {
+    public class AuthenticatedUserInfo
+    {
+        public string UserId { get; set; }          // GUID, SID, или другой уникальный идентификатор
+        public string Username { get; set; }        // Имя пользователя или email
+        public string DisplayName { get; set; }     // Отображаемое имя
+        public string Email { get; set; }           // Email, если доступен
+        public List<string> Roles { get; set; }     // Роли или claims
+
+        public AuthenticatedUserInfo()
+        {
+            Roles = new List<string>();
+        }
+    }
+
     public interface IAuthenticationTokens
     {
         string Token { get; }
         DateTime TokenExpiresAt { get; }
         string RefreshToken { get; }
+        string Scheme { get; }
+
+        /// <summary>
+        /// Специфичные настройки для схемы (например, ADFS, JWT)
+        /// </summary>
+        object AuthOptions { get; }
+
+        /// <summary>
+        /// Информация о пользователе, полученная из токена или провайдера.
+        /// </summary>
+        AuthenticatedUserInfo User { get; }
     }
 
     public class TokenAuthMiddlewareOptions
     {
+        /// <summary>
+        /// Текущий набор токенов (JWT, ADFS и т.д.)
+        /// </summary>
         public IAuthenticationTokens TokenSet { get; }
 
+        /// <summary>
+        /// Делегат, отвечающий за обновление токенов.
+        /// Получает текущий токен и возвращает обновлённый.
+        /// </summary>
         public Func<IAuthenticationTokens, Task<IAuthenticationTokens>> RefreshTokensAsync { get; set; }
 
         public TokenAuthMiddlewareOptions(IAuthenticationTokens tokenSet)
         {
-            TokenSet = tokenSet;
+            TokenSet = tokenSet ?? throw new ArgumentNullException(nameof(tokenSet));
+        }
+
+        /// <summary>
+        /// Попытка привести AuthOptions к нужному типу.
+        /// </summary>
+        public TOptions GetOptions<TOptions>() where TOptions : class
+        {
+            return TokenSet.AuthOptions as TOptions;
         }
     }
 
