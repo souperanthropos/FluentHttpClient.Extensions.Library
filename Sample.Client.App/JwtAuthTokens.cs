@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace Sample.Client.App
 {
-    public class JwtBearerAuthData : IJwtBearerAuthData
+    public class JwtAuthTokens : IAuthenticationTokens
     {
         [JsonProperty("refresh_token")]
         public string RefreshToken { get; set; }

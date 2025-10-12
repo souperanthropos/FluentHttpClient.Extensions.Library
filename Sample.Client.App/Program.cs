@@ -34,15 +34,15 @@ namespace Sample.Client.App
                             Login = "weather1",
                             Password = "12345"
                         })
-                        .ReturnAsResponse<JwtBearerAuthData>();
+                        .ReturnAsResponse<JwtAuthTokens>();
 
                 fluentHttpClientFactory.CreateBuilder(identifier: "getdata")
                   .WithMessageHandler(new HttpClientHandler { ServerCertificateCustomValidationCallback = delegate { return true; } })
                   .WithBaseUrl("https://localhost:7161")
                   .WithHeader("user-agent", "Sample.Client.App")
-                  .UseMiddleware<JwtBearerAuthManagerMiddleware>(new JwtBearerAuthManagerMiddlewareOptions(tokenResponse.Data)
+                  .UseMiddleware<BearerTokenMiddleware>(new TokenAuthMiddlewareOptions(tokenResponse.Data)
                   {
-                      JwtBearerRefreshTokenProcessing = async (data) =>
+                      RefreshTokensAsync = async (data) =>
                       {
                           var refreshTokenResponse =
                           await getTokenHttpClient.CreateRequest("/api/refresh-token")
@@ -52,7 +52,7 @@ namespace Sample.Client.App
                                   AccessToken = data.Token,
                                   RefreshToken = data.RefreshToken
                               })
-                              .ReturnAsResponse<JwtBearerAuthData>();
+                              .ReturnAsResponse<JwtAuthTokens>();
                           return refreshTokenResponse.Data;
                       }
                   })
