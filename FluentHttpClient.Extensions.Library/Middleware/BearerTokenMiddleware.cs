@@ -23,10 +23,13 @@ namespace FluentHttpClient.Extensions.Library.Middleware
 
     public interface IAuthenticationTokens
     {
+        string IdToken { get; }
         string Token { get; }
-        DateTime TokenExpiresAt { get; }
+        int ExpiresIn { get; }
+        DateTime? TokenExpiresAt { get; }
         string RefreshToken { get; }
         string Scheme { get; }
+        string Scope { get; }
 
         /// <summary>
         /// Специфичные настройки для схемы (например, ADFS, JWT)
