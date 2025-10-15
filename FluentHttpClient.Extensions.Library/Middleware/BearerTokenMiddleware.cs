@@ -26,7 +26,6 @@ namespace FluentHttpClient.Extensions.Library.Middleware
         string IdToken { get; }
         string Token { get; }
         int ExpiresIn { get; }
-        DateTime? TokenExpiresAt { get; }
         string RefreshToken { get; }
         string Scheme { get; }
         string Scope { get; }
@@ -47,15 +46,15 @@ namespace FluentHttpClient.Extensions.Library.Middleware
         /// <summary>
         /// Текущий набор токенов (JWT, ADFS и т.д.)
         /// </summary>
-        public IAuthenticationTokens TokenSet { get; }
+        public AuthenticationTokensBase TokenSet { get; }
 
         /// <summary>
         /// Делегат, отвечающий за обновление токенов.
         /// Получает текущий токен и возвращает обновлённый.
         /// </summary>
-        public Func<IAuthenticationTokens, Task<IAuthenticationTokens>> RefreshTokensAsync { get; set; }
+        public Func<AuthenticationTokensBase, Task<AuthenticationTokensBase>> RefreshTokensAsync { get; set; }
 
-        public TokenAuthMiddlewareOptions(IAuthenticationTokens tokenSet)
+        public TokenAuthMiddlewareOptions(AuthenticationTokensBase tokenSet)
         {
             TokenSet = tokenSet ?? throw new ArgumentNullException(nameof(tokenSet));
         }
@@ -75,7 +74,7 @@ namespace FluentHttpClient.Extensions.Library.Middleware
         private readonly FluentHttpMiddlewareDelegate _next;
         private readonly TokenAuthMiddlewareOptions _options;
 
-        private IAuthenticationTokens TokenSet { get; set; }
+        private AuthenticationTokensBase TokenSet { get; set; }
 
         public BearerTokenMiddleware(
             FluentHttpMiddlewareDelegate next,

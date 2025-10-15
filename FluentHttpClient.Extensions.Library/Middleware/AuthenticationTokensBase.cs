@@ -1,0 +1,85 @@
+﻿using Newtonsoft.Json;
+using System;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
+
+namespace FluentHttpClient.Extensions.Library.Middleware
+{
+    public abstract class AuthenticationTokensBase : IAuthenticationTokens
+    {
+        [JsonProperty("id_token")]
+        public string IdToken { get; set; }
+
+        [JsonProperty("access_token")]
+        public string Token { get; set; }
+
+        [JsonProperty("expires_in")]
+        public int ExpiresIn { get; set; }
+
+        [JsonProperty("refresh_token")]
+        public string RefreshToken { get; set; }
+
+        public abstract string Scheme { get; }
+
+        public abstract AuthenticatedUserInfo User { get; }
+
+        public virtual string Scope { get; set; } = null;
+
+        public virtual object AuthOptions { get; set; } = null;
+
+        [JsonIgnore]
+        private DateTime? _tokenExpiresAt;
+        public DateTime? TokenExpiresAt
+        {
+            get
+            {
+                if (_tokenExpiresAt == null)
+                {
+                    _tokenExpiresAt = GetTokenExpiry();
+                }
+                return _tokenExpiresAt;
+            }
+        }
+
+        private DateTime? GetTokenExpiry()
+        {
+            var handler = new JwtSecurityTokenHandler();
+
+            if (!handler.CanReadToken(Token))
+                return null;
+
+            var jwtToken = handler.ReadJwtToken(Token);
+            var expClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "exp");
+
+            if (expClaim == null || !long.TryParse(expClaim.Value, out var expUnix))
+                return null;
+
+            var expiresAt = DateTimeOffset.FromUnixTimeSeconds(expUnix).UtcDateTime;
+            return expiresAt;
+        }
+
+        protected virtual AuthenticatedUserInfo GetUserFromToken(string token)
+        {
+            if (string.IsNullOrEmpty(token))
+            {
+                return new AuthenticatedUserInfo();
+            }
+
+            try
+            {
+                var handler = new JwtSecurityTokenHandler();
+                var jwtToken = handler.ReadJwtToken(Token);
+
+                return new AuthenticatedUserInfo
+                {
+                    DisplayName = jwtToken.Claims.FirstOrDefault(c => c.Type == "full_name")?.Value,
+                    Email = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value
+                };
+            }
+            catch
+            {
+                return new AuthenticatedUserInfo();
+            }
+        }
+    }
+}
