@@ -70,9 +70,15 @@ namespace FluentHttpClient.Extensions.Library.Middleware
                 var handler = new JwtSecurityTokenHandler();
                 var jwtToken = handler.ReadJwtToken(Token);
 
+                var displayName = jwtToken.Claims.FirstOrDefault(c => c.Type == "full_name")?.Value;
+                if (string.IsNullOrEmpty(displayName))
+                {
+                    displayName = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.FamilyName)?.Value + " " + jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.UniqueName)?.Value;
+                }
+
                 return new AuthenticatedUserInfo
                 {
-                    DisplayName = jwtToken.Claims.FirstOrDefault(c => c.Type == "full_name")?.Value,
+                    DisplayName = displayName,
                     Email = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value
                 };
             }
