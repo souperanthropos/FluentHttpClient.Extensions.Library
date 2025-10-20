@@ -21,11 +21,23 @@ namespace FluentHttpClient.Extensions.Library.Middleware
 
         public abstract string Scheme { get; }
 
-        public abstract AuthenticatedUserInfo User { get; }
-
         public virtual string Scope { get; set; } = null;
 
         public virtual object AuthOptions { get; set; } = null;
+
+        private AuthenticatedUserInfo _user;
+        [JsonIgnore]
+        public AuthenticatedUserInfo User
+        {
+            get
+            {
+                if (_user == null)
+                {
+                    _user = GetUserFromToken();
+                }
+                return _user;
+            }
+        }
 
         [JsonIgnore]
         private DateTime? _tokenExpiresAt;
@@ -58,9 +70,9 @@ namespace FluentHttpClient.Extensions.Library.Middleware
             return expiresAt;
         }
 
-        protected virtual AuthenticatedUserInfo GetUserFromToken(string token)
+        protected virtual AuthenticatedUserInfo GetUserFromToken()
         {
-            if (string.IsNullOrEmpty(token))
+            if (string.IsNullOrEmpty(Token))
             {
                 return new AuthenticatedUserInfo();
             }
