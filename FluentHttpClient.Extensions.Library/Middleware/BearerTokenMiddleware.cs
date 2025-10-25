@@ -44,28 +44,10 @@ namespace FluentHttpClient.Extensions.Library.Middleware
     public class TokenAuthMiddlewareOptions
     {
         /// <summary>
-        /// Текущий набор токенов (JWT, ADFS и т.д.)
-        /// </summary>
-        public AuthenticationTokensBase TokenSet { get; }
-
-        /// <summary>
         /// Делегат, отвечающий за обновление токенов.
         /// Получает текущий токен и возвращает обновлённый.
         /// </summary>
-        public Func<AuthenticationTokensBase, Task<AuthenticationTokensBase>> RefreshTokensAsync { get; set; }
-
-        public TokenAuthMiddlewareOptions(AuthenticationTokensBase tokenSet)
-        {
-            TokenSet = tokenSet ?? throw new ArgumentNullException(nameof(tokenSet));
-        }
-
-        /// <summary>
-        /// Попытка привести AuthOptions к нужному типу.
-        /// </summary>
-        public TOptions GetOptions<TOptions>() where TOptions : class
-        {
-            return TokenSet.AuthOptions as TOptions;
-        }
+        public Func<Task<string>> GetTokenAsync { get; set; }
     }
 
     public class BearerTokenMiddleware : IFluentHttpMiddleware
@@ -74,8 +56,6 @@ namespace FluentHttpClient.Extensions.Library.Middleware
         private readonly FluentHttpMiddlewareDelegate _next;
         private readonly TokenAuthMiddlewareOptions _options;
 
-        private AuthenticationTokensBase TokenSet { get; set; }
-
         public BearerTokenMiddleware(
             FluentHttpMiddlewareDelegate next,
             FluentHttpMiddlewareClientContext context,
@@ -83,7 +63,6 @@ namespace FluentHttpClient.Extensions.Library.Middleware
         {
             _next = next;
             _options = options;
-            TokenSet = options.TokenSet;
         }
 
         public async Task<FluentHttpResponse> Invoke(FluentHttpMiddlewareContext context)
@@ -92,21 +71,18 @@ namespace FluentHttpClient.Extensions.Library.Middleware
 
             FluentHttpResponse response;
             bool isMutexReleased = false;
+            var token = string.Empty;
 
             try
             {
                 await _mutex.WaitAsync();
 
-                if (string.IsNullOrEmpty(TokenSet?.Token) ||
-                    TokenSet?.TokenExpiresAt <= DateTime.UtcNow)
-                {
-                    TokenSet = await _options.RefreshTokensAsync(TokenSet);
-                }
+                token = await _options.GetTokenAsync();
 
                 _mutex.Release();
                 isMutexReleased = true;
 
-                request.Headers.Add(HeaderTypes.Authorization, $"{AuthSchemeTypes.Bearer} {TokenSet.Token}");
+                request.Headers.Add(HeaderTypes.Authorization, $"{AuthSchemeTypes.Bearer} {token}");
                 response = await _next(context);
             }
             catch (Exception e)
