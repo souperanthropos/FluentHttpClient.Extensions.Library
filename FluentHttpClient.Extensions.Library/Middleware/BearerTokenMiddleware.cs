@@ -7,6 +7,12 @@ using System.Threading.Tasks;
 
 namespace FluentHttpClient.Extensions.Library.Middleware
 {
+    public enum AuthScheme
+    {
+        Jwt,
+        Adfs
+    }
+
     public class AuthenticatedUserInfo
     {
         public string UserId { get; set; }          // GUID, SID, или другой уникальный идентификатор
@@ -27,7 +33,7 @@ namespace FluentHttpClient.Extensions.Library.Middleware
         string Token { get; }
         int ExpiresIn { get; }
         string RefreshToken { get; }
-        string Scheme { get; }
+        AuthScheme Scheme { get; }
         string Scope { get; }
 
         /// <summary>

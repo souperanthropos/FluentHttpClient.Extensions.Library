@@ -19,7 +19,7 @@ namespace FluentHttpClient.Extensions.Library.Middleware
         [JsonProperty("refresh_token")]
         public string RefreshToken { get; set; }
 
-        public abstract string Scheme { get; }
+        public abstract AuthScheme Scheme { get; }
 
         public virtual string Scope { get; set; } = null;
 
